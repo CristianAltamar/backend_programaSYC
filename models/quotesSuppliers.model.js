@@ -1,5 +1,4 @@
 import { pool } from "../DB/connection.js";
-import mysql from "mysql2/promise";
 
 export const getQuoteSupplier = async (filters = {}, limit = 10, page = 1) => {
     const offset = (page - 1) * limit;
@@ -55,7 +54,7 @@ export const getQuoteSupplierByID = async (id) => {
             [id]
         );
 
-        const [products] = await connection.query(
+        const [quotes] = await connection.query(
             `SELECT p.name as product, pp.quantity, pp.brand, pp.description, pp.price
             FROM purchase_prices pp
             INNER JOIN products p ON pp.product_id = p.UniqueID
@@ -63,7 +62,7 @@ export const getQuoteSupplierByID = async (id) => {
             [id]
         );
         await connection.commit();
-        return { quote: quote[0], products };
+        return { quote: quote[0], quotes };
     } catch (error) {
         await connection.rollback();
         throw error;
@@ -134,7 +133,7 @@ export const updateQuoteSupplier = async (id, generalDates, products) => {
     }
 };
 
-export const deleteQuoteSupplier = async (productID) => {
+export const deleteQuoteSupplier = async (ID) => {
     // Delete the product from the database
     const connection = await pool.getConnection();
     try {
@@ -142,14 +141,15 @@ export const deleteQuoteSupplier = async (productID) => {
 
         const [resultDetail] = await connection.query(
             'DELETE FROM purchase_prices WHERE quote_id = ?',
-            [productID]
+            [ID]
         )
 
-        const [result] = await pool.query(
+        const [result] = await connection.query(
             'DELETE FROM supplier_quotes WHERE quote_id = ?',
-            [productID]
+            [ID]
         );
-    
+        
+        await connection.commit();
         return result.affectedRows > 0;
 
     } catch (error) {
@@ -159,11 +159,3 @@ export const deleteQuoteSupplier = async (productID) => {
         connection.release();
     }
 }
-
-getQuoteSupplier({ supplier: 'name-2' }, 10, 1)
-    .then(result => console.log(result))
-    .catch(error => console.error(error));
-
-getQuoteSupplier({ supplier:"name", date:{ start: "2023-10-1", end: "2023-10-30" }})
-    .then(result => console.log(result))
-    .catch(error => console.error(error));

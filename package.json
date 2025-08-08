@@ -2,9 +2,10 @@
   "name": "syc",
   "version": "1.0.0",
   "description": "",
-  "main": "db.js",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
   },
   "keywords": [],
   "author": "",
@@ -12,6 +13,7 @@
   "type": "module",
   "dependencies": {
     "bcrypt": "6.0.0",
+    "cors": "2.8.5",
     "dotenv": "17.2.1",
     "express": "5.1.0",
     "jsonwebtoken": "9.0.2",

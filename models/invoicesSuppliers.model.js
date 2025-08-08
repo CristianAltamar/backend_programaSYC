@@ -1,41 +1,41 @@
 import { pool } from "../DB/connection.js";
 
-export const getInvoiceClient = async (filters = {}, limit = 10, page = 1) => {
+export const getInvoiceSupplier = async (filters = {}, limit = 10, page = 1) => {
     const offset = (page - 1) * limit;
     const condittions = [];
     const values = [];
 
     if (filters.id) {
-        condittions.push('s.sale_id = ?');
+        condittions.push('pi.UniqueID = ?');
         values.push(filters.id);
     }
     if (filters.date) {
-        condittions.push('s.date BETWEEN ? AND ?');
+        condittions.push('pi.date BETWEEN ? AND ?');
         values.push(filters.date.start, filters.date.end);
     }
-    if (filters.orderID) {
-        condittions.push('s.purchase_order_id = ?');
+    if (filters.quoteID) {
+        condittions.push('pi.quote_id = ?');
         values.push(filters.quoteID);
     }
-    if (filters.client) {
-        condittions.push('c.name LIKE ?');
-        values.push(`%${filters.client}%`);
+    if (filters.supplier) {
+        condittions.push('s.name LIKE ?');
+        values.push(`%${filters.supplier}%`);
     }
     if (filters.expiredDate) {
-        condittions.push('s.expired_date BETWEEN ? AND ?');
+        condittions.push('pi.expired_date BETWEEN ? AND ?');
         values.push(filters.expiredDate.start, filters.expiredDate.end);
     }
     if (filters.paymentStatus) {
-        condittions.push("s.payment_status = ?");
+        condittions.push("pi.payment_status = ?");
         values.push(filters.paymentStatus)
     }
 
     const whereClause = condittions.length > 0 ? 'WHERE ' + condittions.join(' AND ') : '';
     
     const [invoices]= await pool.query(
-        `SELECT s.sale_id as id, s.date, c.name as client, s.purchase_order_id, s.expiration_date, s.payment_status, s.invoice
-        FROM sales s
-        JOIN clients c ON s.client_id = c.UniqueID
+        `SELECT pi.UniqueID as id, pi.date, s.name as supplier, pi.quote_id, pi.expiration_date, pi.payment_status, pi.attached_invoice
+        FROM purchase_invoice pi
+        JOIN suppliers s ON pi.supplier_id = s.UniqueID
         ${whereClause} LIMIT ? OFFSET ?`, 
         [...values, limit, offset]
     );
@@ -43,8 +43,8 @@ export const getInvoiceClient = async (filters = {}, limit = 10, page = 1) => {
     // Get total count of products for pagination
     const [[{total}]] = await pool.query(
         `SELECT COUNT(*) as total 
-        FROM sales s
-        INNER JOIN clients c ON s.client_id = c.UniqueID 
+        FROM purchase_invoice pi 
+        INNER JOIN suppliers s ON pi.supplier_id = s.UniqueID 
         ${whereClause}`, 
         values
     );
@@ -52,25 +52,25 @@ export const getInvoiceClient = async (filters = {}, limit = 10, page = 1) => {
     return { invoices, total };
 };
 
-export const getInvoiceClientByID = async (id) => {
+export const getInvoiceSupplierByID = async (id) => {
     // Get a specific order by ID
     const connection = await pool.getConnection();
     try {
         await connection.beginTransaction();
 
         const [invoice] = await connection.query(
-            `SELECT s.sale_id as id, s.date, c.nit, c.name as client, s.purchase_order_id, s.expiration_date, s.payment_status, s.invoice
-            FROM sales s
-            JOIN clients c ON s.client_id = c.UniqueID
-            WHERE s.sale_id = ?`, 
+            `SELECT pi.UniqueID as id, pi.date, s.nit, s.name as supplier, pi.quote_id, pi.expiration_date, pi.payment_status, pi.attached_invoice
+            FROM purchase_invoice pi
+            JOIN suppliers s ON pi.supplier_id = s.UniqueID
+            WHERE s.UniqueID = ?`, 
             [id]
         );
 
         const [products] = await connection.query(
-            `SELECT p.name as product, ip.purchase_price, ip.invoice_supplier_id, ip.und, ip.quantity, ip.price
-            FROM sale_invoice_products ip
-            INNER JOIN products p ON ip.product_id = p.UniqueID
-            WHERE ip.sale_id = ?`, 
+            `SELECT p.name as product, po.und, po.quantity, po.brand, po.description, po.price
+            FROM purchase_invoice_products po
+            INNER JOIN products p ON po.product_id = p.UniqueID
+            WHERE po.invoice_id = ?`, 
             [id]
         );
         await connection.commit();
@@ -83,23 +83,23 @@ export const getInvoiceClientByID = async (id) => {
     }
 };
 
-export const createInvoiceClient = async ({id, date, clientID, orderID, expirationDate, paymentStatus, attached, products}) => {
+export const createInvoiceSupplier = async ({id, date, supplierID, quoteID, expirationDate, paymentStatus, attached, products}) => {
     // Insert the product into the database
     const connection = await pool.getConnection();
     try {
         await connection.beginTransaction();
 
         const [result] = await connection.query(
-            'INSERT INTO sales (sale_id, date, client_id, purchase_order_id, expiration_date, payment_status, invoice) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [id, date, clientID, orderID, expirationDate, paymentStatus, attached]
+            'INSERT INTO purchase_invoice (UniqueID, date, supplier_id, quote_id, expiration_date, payment_status, attached_invoice) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [id, date, supplierID, quoteID, expirationDate, paymentStatus, attached]
         );
 
         const invoiceID = result.insertId;
         
         for (const product of products) {
             await connection.query(
-                'INSERT INTO sale_invoice_products (sale_id, product_id, purchase_price, invoice_supplier_id, und, quantity, price) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                [invoiceID, product.productID, product.purchasePrice, product.invoiceSupplierID, product.und, product.quantity, product.price]
+                'INSERT INTO purchase_invoice_products (invoice_id, product_id, und, quantity, brand, description, price) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                [invoiceID, product.productID, product.und, product.quantity, product.brand, product.description, product.price]
             );
         } 
 
@@ -113,25 +113,25 @@ export const createInvoiceClient = async ({id, date, clientID, orderID, expirati
     }
 };
 
-export const updateInvoiceClient = async (id, generalDates, products) => {
+export const updateInvoiceSupplier = async (id, generalDates, products) => {
     // Update the product in the database
     const connection = await pool.getConnection();
     try {
         await connection.beginTransaction();
 
         await connection.query(
-            'UPDATE sales SET date = ?, client_id = ?, purchase_order_id = ?, expiration_date = ?, payment_status = ?, invoice = ? WHERE sale_id = ?',
-            [generalDates.date, generalDates.clientID, generalDates.purchaseOrderID, generalDates.expirationDate, generalDates.paymentStatus, generalDates.attached, id]
+            'UPDATE purchase_invoice SET date = ?, supplier_id = ?, quote_id = ?, expiration_date = ?, payment_status = ?, attached_invoice = ? WHERE UniqueID = ?',
+            [generalDates.date, generalDates.supplierID, generalDates.quoteID, generalDates.expirationDate, generalDates.paymentStatus, generalDates.attached, id]
         );
 
         // Delete existing products for this order
-        await connection.query('DELETE FROM sale_invoice_products WHERE sale_id = ?', [id]);
+        await connection.query('DELETE FROM purchase_invoice_products WHERE invoice_id = ?', [id]);
 
         // Insert updated products
         for (const product of products) {
             await connection.query(
-                'INSERT INTO sale_invoice_products (sale_id, product_id, purchase_price, invoice_supplier_id, und, quantity, price) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                [id, product.productID, product.purchasePrice, product.invoiceSupplierID, product.und, product.quantity, product.price]
+                'INSERT INTO purchase_invoice_products (invoice_id, product_id, und, quantity, brand, description, price) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                [id, product.productID, product.und, product.quantity, product.brand, product.description, product.price]
             );
         }
 
@@ -145,19 +145,19 @@ export const updateInvoiceClient = async (id, generalDates, products) => {
     }
 };
 
-export const deleteInvoiceClient = async (ID) => {
+export const deleteInvoiceSupplier = async (ID) => {
     // Delete the product from the database
     const connection = await pool.getConnection();
     try {
         await connection.beginTransaction();
 
         const [resultDetail] = await connection.query(
-            'DELETE FROM sale_invoice_products WHERE sale_id = ?',
+            'DELETE FROM purchase_invoice_products WHERE invoice_id = ?',
             [ID]
         )
 
         const [result] = await connection.query(
-            'DELETE FROM sales WHERE sale_id = ?',
+            'DELETE FROM purchase_invoice WHERE UniqueID = ?',
             [ID]
         );
         
