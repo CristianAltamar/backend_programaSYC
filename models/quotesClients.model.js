@@ -9,7 +9,7 @@ export const getQuoteClient = async (filters = {}, limit = 10, page = 1) => {
         condittions.push('q.UniqueID = ?');
         values.push(filters.id);
     }
-    if (filters.date) {
+    if (filters.date.start && filters.date.end) {
         condittions.push('q.date BETWEEN ? AND ?');
         values.push(filters.date.start, filters.date.end);
     }
@@ -19,7 +19,7 @@ export const getQuoteClient = async (filters = {}, limit = 10, page = 1) => {
     }
 
     const whereClause = condittions.length > 0 ? 'WHERE ' + condittions.join(' AND ') : '';
-    
+
     const [quotes]= await pool.query(
         `SELECT q.UniqueID, q.date, c.name as client, q.attached_quote
         FROM quotes q
@@ -87,7 +87,7 @@ export const createQuoteClient = async ({id, date, clientID, delivery, attached,
         for (const product of products) {
             await connection.query(
                 'INSERT INTO quote_prices (quote_id, product_id, und, quantity, reference_price, increment, sale_price) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                [quoteID, product.productID, product.und, product.quantity, product.referencePrice, product.increment, product.salePrice]
+                [quoteID, product.productID, product.und, product.quantity, product.referencePrice, product.increment, product.price]
             );
         } 
 

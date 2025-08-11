@@ -9,7 +9,7 @@ export const getQuoteSupplier = async (filters = {}, limit = 10, page = 1) => {
         condittions.push('q.quote_id = ?');
         values.push(filters.id);
     }
-    if (filters.date) {
+    if (filters.date.start && filters.date.end) {
         condittions.push('q.date BETWEEN ? AND ?');
         values.push(filters.date.start, filters.date.end);
     }

@@ -15,7 +15,7 @@ export const getSupplier = async (filters = {}, limit = 10, page = 1) => {
     }
     if (filters.nit) {
         condittions.push('nit = ?');
-        values.push(`%${filters.nit}%`);
+        values.push(filters.nit);
     }
     if (filters.contact) {
         condittions.push('contact LIKE ?');
@@ -27,7 +27,7 @@ export const getSupplier = async (filters = {}, limit = 10, page = 1) => {
     }
     if (filters.phone) {
         condittions.push('phone = ?');
-        values.push(`%${filters.phone}%`);
+        values.push(filters.phone);
     }
 
     const whereClause = condittions.length > 0 ? 'WHERE ' + condittions.join(' AND ') : '';
@@ -73,6 +73,5 @@ export const deleteSupplier = async (productID) => {
         'DELETE FROM suppliers WHERE UniqueID = ?',
         [productID]
     );
-
     return result.affectedRows > 0;
 }

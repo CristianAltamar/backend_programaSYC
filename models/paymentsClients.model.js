@@ -9,7 +9,7 @@ export const getPaymentClient = async (filters = {}, limit = 10, page = 1) => {
         condittions.push('p.UniqueID = ?');
         values.push(filters.id);
     }
-    if (filters.date) {
+    if (filters.date.start && filters.date.end) {
         condittions.push('p.date BETWEEN ? AND ?');
         values.push(filters.date.start, filters.date.end);
     }

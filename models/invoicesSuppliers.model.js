@@ -9,7 +9,7 @@ export const getInvoiceSupplier = async (filters = {}, limit = 10, page = 1) => 
         condittions.push('pi.UniqueID = ?');
         values.push(filters.id);
     }
-    if (filters.date) {
+    if (filters.date.start && filters.date.end) {
         condittions.push('pi.date BETWEEN ? AND ?');
         values.push(filters.date.start, filters.date.end);
     }

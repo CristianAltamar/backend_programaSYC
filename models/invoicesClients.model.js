@@ -9,13 +9,13 @@ export const getInvoiceClient = async (filters = {}, limit = 10, page = 1) => {
         condittions.push('s.sale_id = ?');
         values.push(filters.id);
     }
-    if (filters.date) {
+    if (filters.date.start && filters.date.end) {
         condittions.push('s.date BETWEEN ? AND ?');
         values.push(filters.date.start, filters.date.end);
     }
     if (filters.orderID) {
         condittions.push('s.purchase_order_id = ?');
-        values.push(filters.quoteID);
+        values.push(filters.orderID);
     }
     if (filters.client) {
         condittions.push('c.name LIKE ?');

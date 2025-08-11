@@ -1,3 +1,4 @@
+import { format } from "mysql2";
 import { pool } from "../DB/connection.js";
 
 export const getProducts = async (filters = {}, limit = 10, page = 1) => {

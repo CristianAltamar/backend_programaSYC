@@ -1,17 +1,17 @@
 import express from 'express';
 const router = express.Router();
 
-import * as products from './products.routes.js';
-import * as clients from './clients.routes.js';
-import * as suppliers from './suppliers.routes.js';
-import * as quotesClients from './quotesClients.routes.js';
-import * as quotesSuppliers from './quotesSuppliers.routes.js';
-import * as invoicesClients from './invoicesClients.routes.js';
-import * as ordersclients from './ordersClients.routes.js';
-import * as ordersSuppliers from './ordersSuppliers.routes.js';
-import * as invoicesSuppliers from './invoicesSuppliers.routes.js';
-import * as paymentsClients from './paymentsClients.routes.js';
-import * as paymentsSuppliers from './paymentsSuppliers.routes.js';
+import products from './products.routes.js';
+import suppliers from './suppliers.routes.js';
+import clients from './clients.routes.js';
+import quotesClients from './quotesClients.routes.js';
+import quotesSuppliers from './quotesSuppliers.routes.js';
+import invoicesClients from './invoicesClients.routes.js';
+import ordersclients from './ordersClients.routes.js';
+import ordersSuppliers from './ordersSuppliers.routes.js';
+import invoicesSuppliers from './invoicesSuppliers.routes.js';
+import paymentsClients from './paymentsClients.routes.js';
+import paymentsSuppliers from './paymentsSuppliers.routes.js';
 
 router.use('/products', products);
 router.use('/clients', clients);
